@@ -1,0 +1,74 @@
+
+Definites
+    attributes_GoodForKids
+    attributes_OutdoorSeating
+    attributes_RestaurantsDelivery
+    attributes_RestaurantsGoodForGroups
+    attributes_RestaurantsPriceRange2
+    attributes_RestaurantsReservations
+    attributes_WiFi
+    stars
+
+
+
+MAYBE
+    attributes_alcohol
+    attributes_acceptsInsurance
+    attributes_Ambience  one hot encode -> PCA
+    attributes_AgesAllowed (probably not)- mostly null
+    attributes_BusinessParking
+    attributes_Caters
+    attributes_DogsAllowed
+    attributes_GoodForDancing
+    attributes_GoodForMeal
+    attributes_HasTV
+    attributes_NoiseLevel
+    attributes_RestaurantsAttire
+    attributes_RestaurantsTableService
+    categories (If we have time)
+    latitude
+    longitude
+    review_count
+
+
+
+
+
+
+
+
+Probably Not
+    attributes_BusinessAcceptsCreditCards
+    NAME
+    IS OPEN
+    address
+    attributes 
+    attributes_BYOB
+    attributes_BYOBCorkage
+    attributes_BestNight
+    attributes_bikeParking
+    attributes_BusinessAcceptsBitcoin
+    attributes_ByAppointmentOnly
+    attributes_CoatCheck
+    attributes_Corkage
+    attributes_DietaryRestrictions
+    attributes_DriveThru
+    attributes_HairSpecializesIn
+    attributes_HappyHour
+    attributes_Music
+    attributes_Open24Hours
+    attributes_RestaurantsCounterService
+    attributes_RestaurantsTakeOut
+    attributes_Smoking
+    attributes_WheelchairAccessible
+    business_id
+    city
+    hours
+    hours_All those days
+    name
+    neighborhood
+    postal code
+    state
+
+
+
