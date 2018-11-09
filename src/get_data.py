@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+import numpy as np
 
 _DEFINITES_ = [
     'business_id',
@@ -52,7 +54,7 @@ _USER_DEFAULTS_ = [
 ]
 
 
-def get_business_data(feats='definite'):
+def get_business_data(feats='definite', verbose=False):
     if feats == 'definite':
         b_features = _DEFINITES_
     elif feats == 'maybe':
@@ -61,57 +63,86 @@ def get_business_data(feats='definite'):
     elif feats == 'full':
         # include all
         b_features = None
+    
+    fpath = 'data/business.csv'
+    if os.getcwd()[-3:] == 'src':
+        fpath = '../' + fpath
         
-    business_data = pd.read_csv('../data/business.csv', usecols=b_features)
+    business_data = pd.read_csv(fpath, usecols=b_features)
     
-def clean_business_data(business_data):
+    return clean_business_data(business_data, verbose=verbose)
+    
+def clean_business_data(business_data, verbose=False):
     """ 
-    WARNING: UNTESTED 
-    
     TODO: documentation
     """
     
     ignore = ['business_id', 'stars']
+    numeric_dtypes = [np.int64, np.float64, np.float64, float]
+    
+    mx_len = max([len(s) for s in business_data.columns])
+    def pretty_print(fname):
+        print('='*10, "Feature '%s'" % fname, '='*10)
     
     for col_name in business_data.columns:
         if col_name in ignore:
             continue
+            
+        if verbose:
+            pretty_print(col_name)
         
         # unique values
-        u_vals = set(business_data[col_name])
+        u_vals = business_data[col_name].unique()
         # unique types
-        u_types = set([type(v) for v in u_vals])
+        u_types = list(set([type(v) for v in u_vals]))
         
         # determine data type(s) of column
         if bool in u_types:
+            if verbose:
+                print('TYPE: boolean. Changing False -> 0, True -> 1.')
             to_replace = {True: 1, False: 0}
-            business_data = business_data.replace(to_replace)
+            business_data[col_name].replace(to_replace, inplace=True)
             
             # replace NaN's with average non-NaN value
-            if np.isnan(u_vals).any():
-                r_val = np.mean(business_data[c_name].notnull())
-                business_data = business_data.fillna(value=r_val)
+            if pd.isnull(u_vals).any():
+                r_val = np.mean(business_data[col_name].notnull())
+                business_data[col_name].fillna(value=r_val, inplace=True)
+    
+                if verbose:
+                    print('Detected NaN in column. Replacing with mean of non-NaN values.')
         
         # if column contains categorical string data
         elif str in u_types:
+            if verbose:
+                print('TYPE: string. Doing one-hot encoding.')
             # If the column takes string values, then we one-hot encode the column.
             # For lack of a better way, I basically include NaN as a class when one-hot encoding
-            to_replace = {i, u_v for i, u_v in enumerate(u_vals)}
-            business_data = business_data.replace(to_replace)
+            to_replace = {u_v: i for (i, u_v) in enumerate(u_vals)}
+            business_data[col_name].replace(to_replace, inplace=True)
         
-        # if column contains numeric data
-        elif len(u_types) == 1 and list(u_types)[0] == float:
+        # if column contains only numeric data
+        elif all([dtype in numeric_dtypes for dtype in u_types]):
+            if verbose:
+                print('TYPE: numeric.')
             # replace NaN's with average non-NaN value
-            if np.isnan(u_vals).any():
-                r_val = np.mean(business_data[c_name].notnull())
-                business_data = business_data.fillna(value=r_val)
+            if pd.isnull(u_vals).any():
+                r_val = np.mean(business_data[col_name].notnull())
+                business_data[col_name].fillna(value=r_val, inplace=True)
+                
+                if verbose:
+                    print('Detected NaN in column. Replacing with mean of non-NaN values.')
+        else:
+            print('u_vals: ', u_vals)
+            print('u_types: ', u_types)
+            raise NotImplementedError('?? for %s' % col_name)
+            
+        if verbose:
+            print('')
             
     return business_data
 
-def get_training_data(b_cols='definite'):
+def get_training_data(b_cols='definite', verbose=False):
     """ 
-    WARNING: UNTESTED
-    
     Retrieve training data.
     Returns a 3-tuple (business_data, user_data, review_data), where each element
         is a Pandas dataframe.
@@ -124,11 +155,12 @@ def get_training_data(b_cols='definite'):
     NOTE: for now, I've left out the features "attributes_AgesAllowed" and "categories".
     """
         
-    business_data = get_business_data(feats=b_cols)
+    business_data = get_business_data(feats=b_cols, verbose=verbose)
     
-    user_data = pd.read_csv('../data/users.csv', usecols=_USER_DEFAULTS_)
-                                
-    reviews = pd.read_csv('../data/train_reviews.csv')
+    pfx = '..' if os.getcwd()[-3:] == 'src' else '.'
+    user_data = pd.read_csv(pfx + '/data/users.csv', usecols=_USER_DEFAULTS_)
+    
+    reviews = pd.read_csv(pfx + '/data/train_reviews.csv')
                                 
     return (business_data, user_data, reviews)
                                 
