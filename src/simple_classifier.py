@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 import Classifier
+
 class SimpleClassifier(Classifier.Classifier):
+    
     def __init__(self):
         super(SimpleClassifier, self).__init__('SimpleClassifier')
     

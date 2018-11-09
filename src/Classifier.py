@@ -1,12 +1,20 @@
-class Classifier():
+from abc import ABC
+
+class Classifier(ABC):
+    """ Classifier template class. """
+    
     def __init__(self, type):
         self.type = type
-    # override this method
+        
+    @abstractmethod
     def train(self, reviews, users, businesses):
         pass
-    # override this method - should return a pandas Series
+    
+    @abstractmethod
     def classify(self, queries):
+        """ Should return a pandas Series """
         pass
+    
     def write(self, output):
         #with open(f"{self.type}_submission", 'w+') as f:
         #   f.write(output)
