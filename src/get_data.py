@@ -80,16 +80,12 @@ def clean_business_data(business_data, verbose=False):
     ignore = ['business_id', 'stars']
     numeric_dtypes = [np.int64, np.float64, np.float64, float]
     
-    mx_len = max([len(s) for s in business_data.columns])
-    def pretty_print(fname):
-        print('='*10, "Feature '%s'" % fname, '='*10)
-    
     for col_name in business_data.columns:
         if col_name in ignore:
             continue
             
         if verbose:
-            pretty_print(col_name)
+            print('='*10, "Feature '%s'" % col_name, '='*10)
         
         # unique values
         u_vals = business_data[col_name].unique()
@@ -156,13 +152,25 @@ def get_training_data(b_cols='definite', verbose=False):
     """
         
     business_data = get_business_data(feats=b_cols, verbose=verbose)
+    business_data.set_index('business_id', inplace=True)
     
     pfx = '..' if os.getcwd()[-3:] == 'src' else '.'
     user_data = pd.read_csv(pfx + '/data/users.csv', usecols=_USER_DEFAULTS_)
+    user_data.set_index('user_id', inplace=True)
     
     reviews = pd.read_csv(pfx + '/data/train_reviews.csv')
                                 
     return (business_data, user_data, reviews)
+
+
+def get_validation_reviews():
+    
+    pfx = '..' if os.getcwd()[-3:] == 'src' else '.'
+    valid_queries = pd.read_csv(pfx + '/data/validate_queries.csv')
                                 
-                                
-                        
+    return valid_queries    
+    
+    
+    
+    
+    
