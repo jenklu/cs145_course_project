@@ -52,8 +52,12 @@ _USER_DEFAULTS_ = [
     'funny', 
     'review_count', 
     'useful',
-    'user_id', 
-    'friends'
+    'user_id'
+]
+
+_ADDITIONAL_FEATURES_ = [
+    'friend_average_rating',
+    'k-means'
 ]
 
 def get_business_data(feats='definite', verbose=False):
@@ -251,15 +255,22 @@ def one_hot_encode(business_data, col_name):
     
     return business_data
 
-def construct_design_matrix(business_data, user_data, reviews, verbose=False):
+def construct_design_matrix(
+    business_data, user_data, reviews, return_df=False, verbose=False
+):
     """
     Construct a (np.ndarray) design matrix of business-user-review data, and also the target
       array y of star ratings.
+      
+    If return_df=True, then (for X) returns a pd.DataFrame instead of a numpy array 
+      (y is still a numpy array).
     """
     N = len(reviews['stars'])
     Db = len(business_data.columns)
     Du = len(user_data.columns)
     D = Db + Du
+    
+    all_columns = np.append(business_data.columns, user_data.columns)
 
     X = np.zeros((N, D))
     y = np.zeros(N)
@@ -281,5 +292,12 @@ def construct_design_matrix(business_data, user_data, reviews, verbose=False):
     if verbose:
         print('Finished!')
     
-    return X, y
+    if return_df:
+        return pd.DataFrame(data=X, columns=all_columns), y
+    else:
+        return X, y
+
+
+
+
 
