@@ -256,22 +256,22 @@ def construct_design_matrix(business_data, user_data, reviews):
     """
     N = len(reviews['stars'])
     Db = len(business_data.columns)
-    Du = len(u_data.columns)
+    Du = len(user_data.columns)
     D = Db + Du
 
     X = np.zeros((N, D))
     y = np.zeros(N)
 
     for i, review in reviews.iterrows():
-    if (i % 20000) == 0:
-        print('%d/%d done' % (i, N))
+        if (i % 20000) == 0:
+            print('%d/%d done' % (i, N))
+
+        u_id = review['user_id']
+        b_id = review['business_id']
+        y[i] = review['stars']
+
+        X[i, :Db] = business_data.loc[b_id].values
+        X[i, Db:] = user_data.loc[u_id].values
     
-    u_id = review['user_id']
-    b_id = review['business_id']
-    y[i] = review['stars']
-    
-    X[i, :Db] = b_data.loc[b_id].values
-    X[i, Db:] = u_data.loc[u_id].values
-    
-    print('Done')
+    return X, y
 
