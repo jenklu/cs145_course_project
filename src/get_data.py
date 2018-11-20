@@ -53,6 +53,7 @@ _USER_DEFAULTS_ = [
     'review_count', 
     'useful',
     'user_id', 
+    'friends'
 ]
 
 def get_business_data(feats='definite', verbose=False):
@@ -129,8 +130,6 @@ def clean_business_data(business_data, verbose=False):
                     
                 # If the column takes string values, then we one-hot encode the column.
                 # For lack of a better way, I basically include NaN as a class when one-hot encoding
-#                 to_replace = {u_v: i for (i, u_v) in enumerate(u_vals)}
-#                 business_data[col_name].replace(to_replace, inplace=True)
                 business_data = one_hot_encode(business_data, col_name)
         
         # if column contains only numeric data
@@ -239,6 +238,9 @@ def one_hot_encode(business_data, col_name):
     for i, value in enumerate(business_data[col_name]):
         new_features[i, u_vals == value] = 1
         
+        # handle possible NaN
+        new_features[i, value != value] = 1
+        
     business_data = business_data.drop(col_name, axis=1)
     
     for m in range(M):
@@ -249,7 +251,7 @@ def one_hot_encode(business_data, col_name):
     
     return business_data
 
-def construct_design_matrix(business_data, user_data, reviews):
+def construct_design_matrix(business_data, user_data, reviews, verbose=False):
     """
     Construct a (np.ndarray) design matrix of business-user-review data, and also the target
       array y of star ratings.
@@ -261,9 +263,12 @@ def construct_design_matrix(business_data, user_data, reviews):
 
     X = np.zeros((N, D))
     y = np.zeros(N)
+    
+    if verbose:
+        print('Constructing design matrix now.')
 
     for i, review in reviews.iterrows():
-        if (i % 20000) == 0:
+        if verbose and (i % 20000) == 0:
             print('%d/%d done' % (i, N))
 
         u_id = review['user_id']
@@ -272,6 +277,9 @@ def construct_design_matrix(business_data, user_data, reviews):
 
         X[i, :Db] = business_data.loc[b_id].values
         X[i, Db:] = user_data.loc[u_id].values
+        
+    if verbose:
+        print('Finished!')
     
     return X, y
 
