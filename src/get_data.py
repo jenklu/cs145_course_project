@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import numpy as np
+import ast
 
 _DEFINITES_ = [
     'business_id',
@@ -58,7 +59,6 @@ def get_business_data(feats='definite', verbose=False):
     if feats == 'definite':
         b_features = _DEFINITES_
     elif feats == 'maybe':
-        raise NotImplementedError('haven\'t finished writing the cleaning-up code for these')
         b_features = _DEFINITES_ + _MAYBES_
     elif feats == 'full':
         # include all
@@ -80,7 +80,9 @@ def clean_business_data(business_data, verbose=False):
     ignore = ['business_id', 'stars']
     numeric_dtypes = [np.int64, np.float64, np.float64, float]
     
-    for col_name in business_data.columns:
+    b_columns = business_data.columns
+    
+    for col_name in b_columns:
         if col_name in ignore:
             continue
             
@@ -107,14 +109,27 @@ def clean_business_data(business_data, verbose=False):
                 if verbose:
                     print('Detected NaN in column. Replacing with mean of non-NaN values.')
         
-        # if column contains categorical string data
+        # if column contains categorical string data OR dictionary data
         elif str in u_types:
-            if verbose:
-                print('TYPE: string. Doing one-hot encoding.')
-            # If the column takes string values, then we one-hot encode the column.
-            # For lack of a better way, I basically include NaN as a class when one-hot encoding
-            to_replace = {u_v: i for (i, u_v) in enumerate(u_vals)}
-            business_data[col_name].replace(to_replace, inplace=True)
+            
+            # Check if dictionary
+            try:
+                v0 = ast.literal_eval(business_data[col_name][0])
+            except ValueError:
+                v0 = 'string'
+                
+            if type(v0) is dict:
+                if verbose:
+                    print('TYPE: dict. Creating new features and doing one-hot encoding.')
+                    
+                business_data = process_dictionary_data(business_data, col_name)
+            else:
+                if verbose:
+                    print('TYPE: string. Doing one-hot encoding.')
+                # If the column takes string values, then we one-hot encode the column.
+                # For lack of a better way, I basically include NaN as a class when one-hot encoding
+                to_replace = {u_v: i for (i, u_v) in enumerate(u_vals)}
+                business_data[col_name].replace(to_replace, inplace=True)
         
         # if column contains only numeric data
         elif all([dtype in numeric_dtypes for dtype in u_types]):
@@ -162,7 +177,6 @@ def get_training_data(b_cols='definite', verbose=False):
                                 
     return (business_data, user_data, reviews)
 
-
 def get_validation_reviews():
     
     pfx = '..' if os.getcwd()[-3:] == 'src' else '.'
@@ -170,7 +184,55 @@ def get_validation_reviews():
                                 
     return valid_queries    
     
+def process_dictionary_data(business_data, col_name):
+    """ 
+    Turn a dictionary column into a number of one-hot encoded features.
     
+    Assumes dict values are of type BOOLEAN.
+    """
+    d = ast.literal_eval(business_data[col_name][0])
+    N, M = len(business_data), len(d.keys())
     
+    keys = list(d.keys())
+    new_features = np.zeros((N, M))
+    
+    for i, value in enumerate(business_data[col_name]):
+        try:
+            float(value)
+            continue
+        except ValueError:
+            pass
+#         if value == 'nan':
+#             new_features[i] = np.full(new_features[i], fill_value=np.nan)
+#             continue
+        
+        try:
+            v_dict = ast.literal_eval(value)
+        except ValueError:
+            print('ERROR PROCESSING DICT')
+            print('col_name: %s   index: %d' % (col_name, i))
+            print('dict string: %s' % value)
+            print(value == 'nan')
+            print(np.isnan(float(value)))
+#             print(type(float(value)))
+            raise
+        assert type(v_dict) is dict, "ERROR: %s" % value
+    
+        new_features[i] = np.array([int(v_dict[k]) for k in keys])
+    
+    business_data = business_data.drop(col_name, axis=1)
+    
+    # Now process NaN values
+    for m in range(M):
+        nan_idx = np.isnan(new_features[:, m])
+        non_nan_idx = np.invert(nan_idx)
+        
+        avg_val = np.mean(new_features[non_nan_idx, m])
+        new_features[nan_idx, m] = avg_val
+        
+        c_name = col_name + keys[m].upper()
+        business_data.insert(loc=len(business_data.columns), column=c_name, value=new_features[:, m])
+    
+    return business_data
     
     
