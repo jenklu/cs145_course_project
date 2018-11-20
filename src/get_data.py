@@ -12,6 +12,7 @@ _DEFINITES_ = [
     'attributes_RestaurantsPriceRange2',
     'attributes_RestaurantsReservations',
     'attributes_WiFi',
+    'attributes_AgesAllowed',
     'stars'
 ]
 
@@ -53,7 +54,6 @@ _USER_DEFAULTS_ = [
     'useful',
     'user_id', 
 ]
-
 
 def get_business_data(feats='definite', verbose=False):
     if feats == 'definite':
@@ -126,10 +126,12 @@ def clean_business_data(business_data, verbose=False):
             else:
                 if verbose:
                     print('TYPE: string. Doing one-hot encoding.')
+                    
                 # If the column takes string values, then we one-hot encode the column.
                 # For lack of a better way, I basically include NaN as a class when one-hot encoding
-                to_replace = {u_v: i for (i, u_v) in enumerate(u_vals)}
-                business_data[col_name].replace(to_replace, inplace=True)
+#                 to_replace = {u_v: i for (i, u_v) in enumerate(u_vals)}
+#                 business_data[col_name].replace(to_replace, inplace=True)
+                business_data = one_hot_encode(business_data, col_name)
         
         # if column contains only numeric data
         elif all([dtype in numeric_dtypes for dtype in u_types]):
@@ -163,7 +165,7 @@ def get_training_data(b_cols='definite', verbose=False):
             'maybe':  Include the definite features, plus the 15 we marked "Maybe".
              'full':  Include all features.
              
-    NOTE: for now, I've left out the features "attributes_AgesAllowed" and "categories".
+    NOTE: for now, I've left out the feature "categories".
     """
         
     business_data = get_business_data(feats=b_cols, verbose=verbose)
@@ -194,28 +196,17 @@ def process_dictionary_data(business_data, col_name):
     N, M = len(business_data), len(d.keys())
     
     keys = list(d.keys())
-    new_features = np.zeros((N, M))
+    new_features = np.zeros((N, M), dtype=np.float64)
     
     for i, value in enumerate(business_data[col_name]):
         try:
             float(value)
+            new_features[i] = np.full(new_features[i].shape, fill_value=np.nan)
             continue
         except ValueError:
             pass
-#         if value == 'nan':
-#             new_features[i] = np.full(new_features[i], fill_value=np.nan)
-#             continue
         
-        try:
-            v_dict = ast.literal_eval(value)
-        except ValueError:
-            print('ERROR PROCESSING DICT')
-            print('col_name: %s   index: %d' % (col_name, i))
-            print('dict string: %s' % value)
-            print(value == 'nan')
-            print(np.isnan(float(value)))
-#             print(type(float(value)))
-            raise
+        v_dict = ast.literal_eval(value)
         assert type(v_dict) is dict, "ERROR: %s" % value
     
         new_features[i] = np.array([int(v_dict[k]) for k in keys])
@@ -235,4 +226,52 @@ def process_dictionary_data(business_data, col_name):
     
     return business_data
     
+def one_hot_encode(business_data, col_name):
+    """
+    Take a column containing STRING categorical data and return a 
+      DataFrame with that column replaced with one-hot-encoded columns.
+    """
+    u_vals = business_data[col_name].unique()
     
+    N, M = len(business_data), len(u_vals)
+    new_features = np.zeros((N, M))
+    
+    for i, value in enumerate(business_data[col_name]):
+        new_features[i, u_vals == value] = 1
+        
+    business_data = business_data.drop(col_name, axis=1)
+    
+    for m in range(M):
+        c_name = col_name + str(u_vals[m]).upper()
+        business_data.insert(
+            loc=len(business_data.columns), column=c_name, value=new_features[:, m]
+        )
+    
+    return business_data
+
+def construct_design_matrix(business_data, user_data, reviews):
+    """
+    Construct a (np.ndarray) design matrix of business-user-review data, and also the target
+      array y of star ratings.
+    """
+    N = len(reviews['stars'])
+    Db = len(business_data.columns)
+    Du = len(u_data.columns)
+    D = Db + Du
+
+    X = np.zeros((N, D))
+    y = np.zeros(N)
+
+    for i, review in reviews.iterrows():
+    if (i % 20000) == 0:
+        print('%d/%d done' % (i, N))
+    
+    u_id = review['user_id']
+    b_id = review['business_id']
+    y[i] = review['stars']
+    
+    X[i, :Db] = b_data.loc[b_id].values
+    X[i, Db:] = u_data.loc[u_id].values
+    
+    print('Done')
+
