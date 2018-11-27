@@ -1,5 +1,5 @@
 import numpy as np
-import sklearn
+from sklearn import decomposition
 import matplotlib.pyplot as plt
 import time
 
@@ -39,7 +39,7 @@ def get_PCA_matrix(
         (where M = number of features in untransformed data).
     """
     
-    pca = sklearn.decomposition.PCA()
+    pca = decomposition.PCA()
     pca.fit(X)
         
     evr = np.copy(pca.explained_variance_ratio_)
