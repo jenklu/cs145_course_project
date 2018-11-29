@@ -297,7 +297,40 @@ def construct_design_matrix(
     else:
         return X, y
 
+def construct_test_matrix(business_data, user_data, verbose=False):
+    """
+    Construct and return a (np.ndarray) feature matrix of business-user data based 
+    off the queries in test_queries.csv so that classifiers trained with the matrices
+    from construct_design_matrix can be used to create test predictions
+    """
+    # Read queries into a pd Dataframe
+    fpath = 'data/test_queries.csv'
+    if os.getcwd()[-3:] == 'src':
+        fpath = '../' + fpath
+    test_queries = pd.read_csv(fpath)
 
+    num_bizcols = len(business_data.columns)
+    num_usercols = len(user_data.columns)
+    D = num_bizcols + num_usercols
+    N = len(test_queries.index)
 
+    X_test = np.zeros((N, D))
 
+    if verbose:
+        print('Constructing test feature-matrix now.')
+
+    for i, query in test_queries.iterrows():
+        if verbose and (i % 10000) == 0:
+            print('{}/{} done'.format(i, N))
+
+        u_id = query.loc['user_id']
+        b_id = query.loc['business_id']
+
+        X_test[i, :num_bizcols] = business_data.loc[b_id].values
+        X_test[i, num_bizcols:] = user_data.loc[u_id].values
+        
+    if verbose:
+        print('Finished!')
+    
+    return X_test
 
