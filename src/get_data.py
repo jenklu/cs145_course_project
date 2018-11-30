@@ -1,12 +1,13 @@
 import pandas as pd
 import os
 import numpy as np
+import torch.utils.data 
 
 _DEFINITES_ = [
     'business_id',
-    'attributes_GoodForKids',
+    #'attributes_GoodForKids',
     'attributes_OutdoorSeating',
-    'attributes_RestaurantsDelivery',
+    #'attributes_RestaurantsDelivery',
     'attributes_RestaurantsGoodForGroups',
     'attributes_RestaurantsPriceRange2',
     'attributes_RestaurantsReservations',
@@ -53,7 +54,30 @@ _USER_DEFAULTS_ = [
     'user_id', 
 ]
 
+_USER_SELECTED_FEATURES_ = [
+    'average_stars', 
+    'review_count', 
+    'user_id', 
+]
 
+_REVIEW_DEFAULT_FEATURES_ = [
+    'business_id', 
+    'cool', 
+    'date', 
+    'funny', 
+    'review_id', 
+    'stars', 
+    'text',   
+    'useful', 
+    'user_id'
+]
+
+_REVIEW_SELECTED_FEATURES_ = [
+    'business_id',  
+    'review_id', 
+    'stars',  
+    'user_id'
+]
 def get_business_data(feats='definite', verbose=False):
     if feats == 'definite':
         b_features = _DEFINITES_
@@ -137,7 +161,7 @@ def clean_business_data(business_data, verbose=False):
             
     return business_data
 
-def get_training_data(b_cols='definite', verbose=False):
+def get_training_data(b_cols='definite', user_features = _USER_DEFAULTS_, rev_features = _REVIEW_DEFAULT_FEATURES_, verbose=False):
     """ 
     Retrieve training data.
     Returns a 3-tuple (business_data, user_data, review_data), where each element
@@ -155,22 +179,82 @@ def get_training_data(b_cols='definite', verbose=False):
     business_data.set_index('business_id', inplace=True)
     
     pfx = '..' if os.getcwd()[-3:] == 'src' else '.'
-    user_data = pd.read_csv(pfx + '/data/users.csv', usecols=_USER_DEFAULTS_)
+    user_data = pd.read_csv(pfx + '/data/users.csv', usecols=user_features)
     user_data.set_index('user_id', inplace=True)
     
-    reviews = pd.read_csv(pfx + '/data/train_reviews.csv')
-                                
+    reviews = pd.read_csv(pfx + '/data/train_reviews.csv', usecols=rev_features)
     return (business_data, user_data, reviews)
 
 
 def get_validation_reviews():
-    
     pfx = '..' if os.getcwd()[-3:] == 'src' else '.'
-    valid_queries = pd.read_csv(pfx + '/data/validate_queries.csv')
-                                
+    valid_queries = pd.read_csv(pfx + '/data/validate_queries.csv')   
     return valid_queries    
     
+
+class YelpTrainingDataset(torch.utils.data.Dataset):
+    def __init__(self, transform=None):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+
+        training_data_sets = get_training_data( b_cols='definite',
+                                                user_features=_USER_SELECTED_FEATURES_,
+                                                rev_features=_REVIEW_SELECTED_FEATURES_)
+        #Merge reviews from to combine business and user giving review of business
+        dataset = training_data_sets[2].merge(right=training_data_sets[0], on='business_id', how='inner')
+        dataset = dataset.merge(right=training_data_sets[1], on='user_id', how='inner')
+        self.data_frame = dataset.drop(['review_id','business_id','user_id'],1)
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.data_frame)
+
+    def __getitem__(self, idx):
+        expected_stars = self.data_frame.iloc[idx].stars_x.astype(np.int32) - 1
+        one_h_enc_expected_stars = np.zeros((1, 5))
+        one_h_enc_expected_stars[0,expected_stars] = 1
+        features = self.data_frame.iloc[idx].drop(['stars_x']).values.astype(np.float32)
+        sample = {'features': features, 'expect': one_h_enc_expected_stars[0].astype(np.float32)}
+        if self.transform:
+            sample = self.transform(sample)
+        return sample
     
     
-    
-    
+    class YelpTestingDataset(torch.utils.data.Dataset):
+        def __init__(self, transform=None):
+            """
+            Args:
+                csv_file (string): Path to the csv file with annotations.
+                root_dir (string): Directory with all the images.
+                transform (callable, optional): Optional transform to be applied
+                    on a sample.
+            """
+
+            training_data_sets = get_training_data( b_cols='definite',
+                                                    user_features=_USER_SELECTED_FEATURES_,
+                                                    rev_features=_REVIEW_SELECTED_FEATURES_)
+            #Merge reviews from to combine business and user giving review of business
+            dataset = training_data_sets[2].merge(right=training_data_sets[0], on='business_id', how='inner')
+            dataset = dataset.merge(right=training_data_sets[1], on='user_id', how='inner')
+            self.data_frame = dataset.drop(['review_id','business_id','user_id'],1)
+            self.transform = transform
+
+        def __len__(self):
+            return len(self.data_frame)
+
+        def __getitem__(self, idx):
+            expected_stars = self.data_frame.iloc[idx].stars_x.astype(np.int32) - 1
+            one_h_enc_expected_stars = np.zeros((1, 5))
+            one_h_enc_expected_stars[0,expected_stars] = 1
+            features = self.data_frame.iloc[idx].drop(['stars_x']).values.astype(np.float32)
+            sample = {'features': features, 'expect': one_h_enc_expected_stars[0].astype(np.float32)}
+            if self.transform:
+                sample = self.transform(sample)
+            return sample
+        
+        

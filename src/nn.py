@@ -14,8 +14,8 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         #self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(14, 9)
-        self.fc2 = nn.Linear(9, 5)
+        self.fc1 = nn.Linear(9, 7)
+        self.fc2 = nn.Linear(7, 5)
         self.act_function = F.relu
 
     def forward(self, x):
@@ -27,7 +27,6 @@ class Net(nn.Module):
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     criterion = nn.MSELoss()
-    print("TEST")
     for batch_idx, batch in enumerate(train_loader):
         data = batch['features']
         target = batch['expect']
@@ -69,7 +68,7 @@ def main():
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
-    parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.5, metavar='LR',
                         help='learning rate (default: 0.01)')
     parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
                         help='SGD momentum (default: 0.5)')
@@ -96,6 +95,7 @@ def main():
 
     training_data = get_data.YelpTrainingDataset()
     train_loader = torch.utils.data.DataLoader(training_data,batch_size = args.test_batch_size, shuffle = True, num_workers=2)
+    test_loader = torch.utils.data.DataLoader()
     model = Net().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
