@@ -35,20 +35,20 @@ _MAYBES_ = [
     
 _USER_DEFAULTS_ = [
     'average_stars', 
-    'compliment_cool', 
-    'compliment_cute',
-    'compliment_funny', 
-    'compliment_hot', 
-    'compliment_list',
-    'compliment_more', 
-    'compliment_note', 
-    'compliment_photos',
-    'compliment_plain', 
-    'compliment_profile', 
-    'compliment_writer', 
-    'cool',
-    'fans', 
-    'funny', 
+    #'compliment_cool', 
+    #'compliment_cute',
+    #'compliment_funny', 
+    #'compliment_hot', 
+    #'compliment_list',
+    #'compliment_more', 
+    #'compliment_note', 
+    #'compliment_photos',
+    #'compliment_plain', 
+    #'compliment_profile', 
+    #'compliment_writer', 
+    #'cool',
+    #'fans', 
+    #'funny', 
     'review_count', 
     'useful',
     'user_id', 
@@ -78,6 +78,9 @@ _REVIEW_SELECTED_FEATURES_ = [
     'stars',  
     'user_id'
 ]
+
+
+
 def get_business_data(feats='definite', verbose=False):
     if feats == 'definite':
         b_features = _DEFINITES_
@@ -210,6 +213,13 @@ class YelpTrainingDataset(torch.utils.data.Dataset):
         dataset = dataset.merge(right=training_data_sets[1], on='user_id', how='inner')
         self.data_frame = dataset.drop(['review_id','business_id','user_id'],1)
         self.transform = transform
+        print(len(self.data_frame[self.data_frame['stars_x'] == 1]))
+        print(len(self.data_frame[self.data_frame['stars_x'] == 2]))
+        print(len(self.data_frame[self.data_frame['stars_x'] == 3]))
+        print(len(self.data_frame[self.data_frame['stars_x'] == 4]))
+        print(len(self.data_frame[self.data_frame['stars_x'] == 5]))
+
+
 
     def __len__(self):
         return len(self.data_frame)

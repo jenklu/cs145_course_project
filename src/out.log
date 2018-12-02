@@ -1,0 +1,8 @@
+Epoch 1, Test set: Average loss: 1.5019, Accuracy: 22078/50077 (44%)
+Epoch 2, Test set: Average loss: 1.5234, Accuracy: 22015/50077 (44%)
+Epoch 3, Test set: Average loss: 1.4914, Accuracy: 21510/50077 (43%)
+Epoch 4, Test set: Average loss: 1.4984, Accuracy: 22136/50077 (44%)
+Epoch 5, Test set: Average loss: 1.5210, Accuracy: 22427/50077 (45%)
+Epoch 6, Test set: Average loss: 1.5377, Accuracy: 22445/50077 (45%)
+Epoch 7, Test set: Average loss: 1.5639, Accuracy: 21971/50077 (44%)
+Epoch 8, Test set: Average loss: 1.5080, Accuracy: 22272/50077 (44%)
