@@ -1,5 +1,5 @@
 import numpy as np
-
+import os
 def format_output(y_pred):
     """
     Takes as input a np.ndarray of predictions, which may be real numbers, and rounds them to the nearest integer between 1 and 5
@@ -17,5 +17,5 @@ def write_output(y_pred, fname):
         f.write("index,stars\n")
         i = 0
         for val in y_pred:
-            f.write(f'{i},{val}')
+            f.write(f'{i},{val}\n')
             i += 1
