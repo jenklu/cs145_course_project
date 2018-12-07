@@ -1,13 +1,15 @@
 import numpy as np
 import os
-def format_output(y_pred):
+def format_output(y_pred, round=False):
     """
     Takes as input a np.ndarray of predictions, which may be real numbers, and rounds them to the nearest integer between 1 and 5
     """
     length = y_pred.shape[0]
     fives = np.full(length, 5)
     ones = np.full(length, 1)
-    return np.maximum(ones, np.minimum(fives, np.rint(y_pred)))
+    if round:
+        y_pred = np.rint(y_pred)
+    return np.maximum(ones, np.minimum(fives, y_pred))
 
 def write_output(y_pred, fname):
     fname = 'output/' + fname
