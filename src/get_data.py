@@ -2,6 +2,8 @@ import pandas as pd
 import os
 import numpy as np
 import ast
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
 
 _DEFINITES_ = [
     'business_id',
@@ -296,8 +298,46 @@ def construct_design_matrix(
         return pd.DataFrame(data=X, columns=all_columns), y
     else:
         return X, y
+    
+    
+
+def add_GMM_features(b_data, u_data, n_b_clusters, n_u_clusters):
+    assert all([t is int for t in [type(n_b_clusters), type(n_u_clusters)]])
+    Db = b_data.values.shape[1]
+    Du = u_data.values.shape[1]
+
+    gmm_b = GaussianMixture(n_components=n_b_clusters)
+    gmm_b.fit(b_data.values[:, :Db])
+    feats = gmm_b.predict_proba(b_data.values[:, :Db])
+    print(b_data.values.shape)
+    for c_num in range(n_b_clusters):
+        f_vals = feats[:, c_num]
+        col_name = 'GMM_b_%d_of_%d' % (c_num+1, n_b_clusters)
+        b_data.insert(loc=len(b_data.columns), column=col_name, value=f_vals)
+        print(b_data.values.shape)
+
+    gmm_u = GaussianMixture(n_components=n_u_clusters)
+    gmm_u.fit(u_data.values[:, :Du])
+    feats = gmm_u.predict_proba(u_data.values[:, :Du])
+    for c_num in range(n_u_clusters):
+        f_vals = feats[:, c_num]
+        col_name = 'GMM_u_%d_of_%d' % (c_num+1, n_u_clusters)
+        u_data.insert(loc=len(u_data.columns), column=col_name, value=f_vals)
 
 
-
-
-
+    return b_data, u_data                    
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
