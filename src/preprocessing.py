@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn import decomposition
+import sklearn.decomposition as decomposition
 import matplotlib.pyplot as plt
 import time
 
