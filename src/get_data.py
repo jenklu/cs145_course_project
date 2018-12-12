@@ -159,7 +159,21 @@ def clean_business_data(business_data, verbose=False):
             
     return business_data
 
-def get_training_data(b_cols='definite', verbose=False):
+def get_avg_user_offset(business_data, user_data, reviews):
+    user_data = user_data.assign(total_offset = np.zeros(user_data.shape[0]))
+    grouped_reviews = reviews.groupby('user_id')
+    i = 0
+    for name, group in grouped_reviews:
+        i += 1
+        user_data.at[name, 'total_offset'] = np.sum([review.stars - businesses.loc[review.business_id].stars for review in group.itertuples()])
+        if i == 200:
+            print(f"Making progress - user: {user_data.loc[name]}")
+            i = 0
+    #print(self.users.loc[self.users['total_offset'] != 0])
+    user_data.assign(avg_offset = user_data['total_offset']/(max(user_data['review_count'], 1)))
+    user_data.drop(labels="total_offset")
+
+def get_training_data(b_cols='definite', user_avg_offset=False, verbose=False):
     """ 
     Retrieve training data.
     Returns a 3-tuple (business_data, user_data, review_data), where each element
@@ -181,7 +195,10 @@ def get_training_data(b_cols='definite', verbose=False):
     user_data.set_index('user_id', inplace=True)
     
     reviews = pd.read_csv(pfx + '/data/train_reviews.csv')
-                                
+    
+    if(user_avg_offset):
+        user_data = get_avg_user_offset(business_data, user_data, reviews)
+
     return (business_data, user_data, reviews)
 
 def get_validation_reviews():
