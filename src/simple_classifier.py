@@ -12,13 +12,13 @@ class SimpleClassifier(Classifier.Classifier):
         self.users = self.users.assign(total_offset = np.zeros(self.users.shape[0]))
         self.businesses = businesses
         grouped_reviews = reviews.groupby('user_id')
-        # i = 0
+        i = 0
         for name, group in grouped_reviews:
-            # i += 1
-            self.users.at[name, 'total_offset'] = np.sum([businesses.loc[review.business_id].stars - review.stars for review in group.itertuples()])
-            # if i == 200:
-            #     print(f"Making progress - user: {users.loc[name]}")
-            #     i = 0
+            i += 1
+            self.users.at[name, 'total_offset'] = np.sum([review.stars - businesses.loc[review.business_id].stars for review in group.itertuples()])
+            if i == 200:
+                print(f"Making progress - user: {users.loc[name]}")
+                i = 0
         #print(self.users.loc[self.users['total_offset'] != 0])
         self.users = self.users.assign(avg_offset = self.users['total_offset']/self.users['review_count'])
 
@@ -33,5 +33,5 @@ class SimpleClassifier(Classifier.Classifier):
             else:
                 user = self.users.loc[query.user_id]
                 #print(user)
-                data.append(max(1, min(5, round(business.stars + user.avg_offset))))
+                data.append(max(1, min(5, business.stars + user.avg_offset)))
         return pd.Series(data, name="stars")
